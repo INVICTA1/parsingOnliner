@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import regex as re
 
 
 def parse_storgame():
@@ -81,25 +82,26 @@ def selenium():
 from datetime import datetime, timedelta
 
 
-def parse_date(date_time, time='1 минуту назад'):
-    import regex
-    dict = {
-        1: ['секунду', 'секунды', 'секунд'],
-        60: ['минуту', 'минуты', 'минут'],
-        3600: ['час', 'часов', 'часа'],
-        86400: ['день', 'дня', 'дней'],
-        604800: ['неделя', 'недели', 'недель'],
+def parse_date(date_time, time='2 дня назад'):
+    print(date_time)
+    data_time = {
+        'секунду,секунды,секунд': 1,
+        'минуту,минуты,минут': 60,
+        'час,часов,часа': 3600,
+        'день,дня,дней': 86400,
+        'неделя,недели,недель': 604800,
     }
     exam = ''
-    words = time.split(' ')
-    for key, value in dict.items():
-        for i in value:
-            if words[1] == i:
-                exam = int(key)
-    if not exam:
-        print("Not data")
-
-    return (date_time - timedelta( seconds= exam)).strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        words = time.split(' ')
+        for key, value in data_time.items():
+            if re.search(words[1].strip(), key):
+                exam = value
+        if not exam:
+            return Exception
+        return (date_time - timedelta(seconds=int(exam)*int(words[0]))).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        print("wrong data")
 parse_date(datetime.now())
 
 # if __name__ == '__test__':
