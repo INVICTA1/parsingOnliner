@@ -5,13 +5,10 @@ from selenium import webdriver
 import csv
 from datetime import datetime, timedelta
 
-
 flats = []
-URL = 'https://r.onliner.by/ak/'
-chromedriver = r'..\resources\chromedriver.exe'
 
 
-def parse_date(date_time, time=None):
+def parse_date(date_now, time=None):
     data_time = {
         'секунду,секунды,секунд': 1,
         'минуту,минуты,минут': 60,
@@ -27,11 +24,12 @@ def parse_date(date_time, time=None):
                 exam = value
         if not exam:
             return Exception
-        print((date_time - timedelta(seconds=int(exam) * int(words[0]))).strftime("%Y-%m-%d %H:%M:%S"),type((date_time - timedelta(seconds=int(exam) * int(words[0]))).strftime("%Y-%m-%d %H:%M:%S")))
-        return (date_time - timedelta(seconds=int(exam) * int(words[0]))).strftime("%Y-%m-%d %H:%M:%S")
+        if time.strip()=='час назад':
+            return (date_now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            return (date_now - timedelta(seconds=int(exam) * int(words[0]))).strftime("%Y-%m-%d %H:%M:%S")
     except Exception:
         return 'Not data'
-    # parse_date(datetime.now())
 
 
 def open_browser(chromedriver):
@@ -56,10 +54,10 @@ def get_amount_pages(soup):
     return amount_page
 
 
-def parse_other_pages(browser, amount_page):
+def parse_other_pages(browser, amount_page, url):
     for page in range(1, int(amount_page) + 1):
-        print(f"Parse page {page} by {URL + '#page=' + str(page)}...")
-        soup = get_page(browser, URL + '#page=' + str(page))
+        print(f"Parse page {page} by {url + '#page=' + str(page)}...")
+        soup = get_page(browser, url + '#page=' + str(page))
         for elem in soup.select('.classified'):
             dollar_price = ''
             rub_price = ''
@@ -70,14 +68,9 @@ def parse_other_pages(browser, amount_page):
                 dollar_price = dollar_price + str(price[i].text.strip())
                 rub_price = rub_price + str(price[i + 2].text.strip())
             flats.extend([['Prise USD: ' + dollar_price, 'Prise BYN: ' + rub_price,
-                           'time: ' , parse_date(datetime.now(), str(time[0].text.strip())),
+                           'time: ', parse_date(datetime.now(), str(time[0].text.strip())),
                            'address: ' + address[0].text.strip()]])
     return flats
-
-
-def show_flats(flats):
-    for i in flats:
-        print(i)
 
 
 def save_result_csv(flats):
@@ -88,17 +81,16 @@ def save_result_csv(flats):
             writer.writerow(flat)
 
 
-def main():
+def parseOnliner():
+    URL = 'https://r.onliner.by/ak/'
+    chromedriver = r'..\resources\chromedriver.exe'
     browser = open_browser(chromedriver)
     soup = get_page(browser, URL)
     amount_page = get_amount_pages(soup)
-    flats = parse_other_pages(browser, amount_page)
+    flats = parse_other_pages(browser, amount_page, URL)
+    print(flats)
     browser.quit()
-    show_flats(flats)
     save_result_csv(flats)
 
 
-main()
-
-# if __name__ == '__test__':
-#     pass
+parseOnliner()
